@@ -1,14 +1,16 @@
 ## prepare cleanfinnprioresults
 species_data <- simulations |> 
   # left_join(simulationSummaries) |> 
-  left_join(assessments) |> 
+  left_join(assessments, by = "idAssessment") |> 
+  left_join(threatXassessment, by = "idAssessment") |>   # linking threats to assessment 
   left_join(pests |> 
               left_join(quaran) |> 
-              left_join(taxa, by = "idTaxa", suffix = c(".q",".t"))
+              left_join(taxa, by = "idTaxa", suffix = c(".q",".t")), by = "idPest"
   ) |> 
   # mutate(inEurope = as.logical(inEurope)) |> 
   mutate(inEurope = as.logical(inEurope)) |> 
-  select(idSimulation, scientificName, name.t, endDate, name.q, eppoCode, inEurope) |> 
+  select(idSimulation, scientificName, name.t, endDate, name.q, eppoCode, inEurope, idThrSect) |> 
+  distinct()|>
   rename("pest" = scientificName,
          "assessment_date" = endDate,
          "eppo_code" = eppoCode,
@@ -43,7 +45,7 @@ sim_data <- simulations |>
          MANAGEABILITY_median,  MANAGEABILITY_mean, 
          RISKA_q25, RISKA_median,  RISKA_q75, RISKA_q5, RISKA_mean, RISKA_q95,
          RISKB_q25, RISKB_median,  RISKB_q75, RISKB_q5, RISKB_mean, RISKB_q95)
-# 
+ 
 
 cleanfinnprioresults <- species_data |> 
   left_join(sim_data) |>
@@ -86,7 +88,8 @@ cleanfinnprioresults <- species_data |>
          "risk_mean" = RISKB_mean,
          "risk_75perc" = RISKB_q75,
          "risk_95perc" = RISKB_q95,
-         )
+         ) #|>
+  #distinct(pest, .keep_all = TRUE) 
 
 
 # print(cleanfinnprioresults)
