@@ -2,7 +2,7 @@
 
 ui <- function(request){
   
-  navbarPage("FinnPRIO Explorer Adapted",
+  navbarPage("FinnPRIO-Explorer Adapted",
              theme = shinythemes::shinytheme("sandstone"),
              header = tagList(
                # Initialize shinyjs
@@ -305,19 +305,24 @@ ui <- function(request){
                                            selectInput(inputId = "pest1_sel",
                                                        label = "Pest 1",
                                                        #choices=c()
-                                                       choices = unique(cleanfinnprioresults$pest)
+                                                       choices = sort(unique(cleanfinnprioresults$pest))
                                            ),
                                            tags$br(),
                                            selectInput(inputId = "pest2_sel",
                                                        label = "Pest 2",
-                                                       choices = unique(cleanfinnprioresults$pest),
-                                                       selected = "Aculops fuchsiae"
+                                                       choices = sort(unique(cleanfinnprioresults$pest)),
+                                                       #selected = "Aculops fuchsiae"
                                            )
                                            
                                  ) ,
                                  tags$br(),
-                                 uiOutput(outputId = "helpPW")
+                                 uiOutput(outputId = "helpPW"),
                                  
+                                 tags$br(),                          # ---NEW---
+                                 tags$a("Instructions for the FinnPRIO assessments",
+                                        href = "instructions.html",
+                                        target = "_blank",
+                                        style = "color:#7C6A56; font-weight:bold; font-size:24px;")  # ---NEW---
                           ),
                           column(9,
                                  DT::dataTableOutput(outputId = "pest_1_2"),
@@ -349,26 +354,29 @@ ui <- function(request){
              #          DT::dataTableOutput(outputId = "table_hv")
              # ),
              
+             # adding a tab with the instructions
+             
+             
              tabPanel("About the app",
                       fluidRow(column(6,
                                       
                                       wellPanel( 
                                         p(tags$p(
                                           tags$b(style = "font-size:13px;",
-                                                 "FinnPRIO Explorer Adapted presents results from FinnPRIO assessments conducted for Sweden made with the FinnPRIO model", 
-                                                 tags$a("(Heikkila et al. 2016)",href="https://doi.org/10.1007/s10530-016-1123-4", target="_blank"),
-                                                 ". It is a modified version of the original app FinnPRIO-Explorer developed in the Risk Assessment Unit of the Finnish Food Authority.",
+                                                 "FinnPRIO-Explorer Adapted presents results from FinnPRIO assessments conducted for Sweden using the FinnPRIO model", 
+                                                 tags$a("(Heikkilä et al. 2016).",href="https://doi.org/10.1007/s10530-016-1123-4", target="_blank"),
+                                                 " It is a modified version of the original app FinnPRIO-Explorer developed in the Risk Assessment Unit of the Finnish Food Authority",
                                                  tags$a("(Marinova-Todorova et al. 2022)",href="https://finnprio-explorer.2.rahtiapp.fi/", target="_blank"))),
                                           tags$br(),
                                           tags$b("FinnPRIO model"),
                                           tags$p(),
                                           tags$p(style = "font-size:13px;",
                                                  "FinnPRIO is a model for ranking non-native plant pests based on the risk that they pose to plant health", 
-                                                 tags$a("(Heikkila et al. 2016)",href="https://doi.org/10.1007/s10530-016-1123-4", target="_blank"),". 
+                                                 tags$a("(Heikkilä et al. 2016).",href="https://doi.org/10.1007/s10530-016-1123-4", target="_blank")," 
                                                  It is composed of five sections: likelihood of entry, likelihood of establishment and spread, magnitude of 
                                                  impacts, preventability, and controllability. The score describing the likelihood of invasion is a product 
                                                  of entry and establishment scores. The score describing the manageability of invasion is the minimum of 
-                                                 prevantability and controllability scores."),
+                                                 preventability and controllability scores."),
                                           tags$p(),
                                           tags$p(style = "font-size:13px;",
                                                  "FinnPRIO consists of multiple-choice questions with different answer options yielding a different number 
@@ -383,14 +391,14 @@ ui <- function(request){
                                           tags$p(style = "font-size:13px;","FinnPRIO-Explorer Adapted introduces additional functionality: risk scores are 
                                                  shown directly in the interface and a ranking based on risk is included. Users can also select to display all 
                                                  scores not only as median values but also as mean values. The uncertainty is displayed by showing the 5th percentile 
-                                                 and the 95th percentile."),
+                                                 and the 95th percentile. Furthermore, a link to the instructions for the FinnPRIO assessments has been added."),
                                           tags$br(),
                                           tags$b("FinnPRIO assessments for Sweden"),
                                           tags$p(),
                                           tags$p(style = "font-size:13px;",
-                                                 "The results presented in this app are based on all FinnPRIO assessments done for Sweden and the calculations 
-                                                 were done using the FinnPRIO-Assessor app", 
-                                                 tags$a("(ZENODO)",href="https://doi.org/10.5281/zenodo.17816319", target="_blank")),
+                                                 "The results presented in this app are based on all FinnPRIO assessments done for Sweden as described in the project 
+                                                 report by Boberg and Björklund (2026) and the calculations were done using the FinnPRIO-Assessor app", 
+                                                 tags$a("(Zenodo)",href="https://doi.org/10.5281/zenodo.17816319", target="_blank")),
                                           tags$p(),
                                           tags$p(style = "font-size:13px;",
                                                  "The probability distributions of the scores were simulated with 50 000 iterations. The likelihood of entry 
@@ -425,6 +433,11 @@ ui <- function(request){
                                                  p(tags$p(
                                                    tags$br(),
                                                    
+                                                   tags$p(style = "font-size:13px;","Boberg J & Björklund N (2026) Project report: Swedish risk ranking of plant pests. 
+                                                          Technical report SLU.ua.2022.2.6-4500. SLU Risk Assessment of Plant Pests, Swedish University of Agricultural Sciences.  
+                                                          https://res.slu.se/id/publ/146642. ",
+                                                          tags$a("https://res.slu.se/id/publ/146642",href="https://res.slu.se/id/publ/146642", target="_blank")),
+                                                   tags$br(),
                                                    tags$p(style = "font-size:13px;","Heikkila J, Tuomola J, Pouta E & Hannunen S (2016) FinnPRIO: a model for ranking invasive 
                                                           plant pests based on risk. Biological Invasions 18, 1827- 1842. ",
                                                           tags$a("doi.org/10.1007/s10530-016-1123-4",href="https://doi.org/10.1007/s10530-016-1123-4", target="_blank")),
@@ -442,7 +455,7 @@ ui <- function(request){
                                                           Finnish Food Authority. Available at ", tags$a("https://finnprio-explorer.2.rahtiapp.fi/", target="_blank"),
                                                           tags$a("https://doi.org/10.5281/zenodo.7016771",href="https://doi.org/10.5281/zenodo.7016771", target="_blank")),
                                                    tags$br(),
-                                                   tags$p(style = "font-size:13px;","Ruete, A., Björklund, N., & Boberg, J. (2025). FinnPRIO-Explorer Adapted: Explore and visualize FinnPRIO assessment results (Version 1.0) 
+                                                   tags$p(style = "font-size:13px;","Ruete, A., Björklund, N., & Boberg, J. (2025). FinnPRIO-Explorer Adapted: Explore and visualize FinnPRIO assessment results 
                                                           [Web application]. Swedish University of Agricultural Sciences. Available from ",
                                                           tags$a("doi.org/10.5281/zenodo.17813062",href="https://doi.org/10.5281/zenodo.17813062", target="_blank"))
                                                  ))
@@ -454,7 +467,7 @@ ui <- function(request){
                                                    tags$p(style = "font-size:13px;",
                                                           "The source code is available at ",
                                                           tags$a("Zenodo",href="https://doi.org/10.5281/zenodo.17813062", target="_blank"),
-                                                          " under the ",tags$a("GNU General Public License version 4", href="https://creativecommons.org/licenses/by/4.0/legalcode", target="_blank"), ".")
+                                                          " under the ",tags$a("GNU General Public License v2.0 only", href="https://opensource.org/license/gpl-2.0", target="_blank"), ".")
                                                    
                                                  ))
                                         ),
@@ -462,7 +475,7 @@ ui <- function(request){
                                                  p(tags$p(
                                                    tags$br(),
                                                    tags$p(style = "font-size:13px;",
-                                                          "Ruete, A., Björklund, N., & Boberg, J. (2025). FinnPRIO-Explorer Adapted: Explore and visualize FinnPRIO assessment results (Version 1.0) [Web application]. Swedish University of Agricultural Sciences. Available from ",
+                                                          "Ruete, A., Björklund, N., & Boberg, J. (2025). FinnPRIO-Explorer Adapted: Explore and visualize FinnPRIO assessment results [Web application]. Swedish University of Agricultural Sciences. Available from ",
                                                           tags$a("https://finnprio-explorer-adapted.serve.scilifelab.se/app/finnprio-explorer-adapted", href="https://finnprio-explorer-adapted.serve.scilifelab.se/app/finnprio-explorer-adapted", target="_blank"),", ",
                                                           tags$a("doi.org/10.5281/zenodo.17813062", href="https://doi.org/10.5281/zenodo.17813062", target="_blank"))
                                                    
