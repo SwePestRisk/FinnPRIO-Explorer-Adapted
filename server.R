@@ -6,36 +6,39 @@ function(input, output, session) {
   ## Subset data -> filter data based on the input selections:-----
   selected_status <- reactive({
     req(cleanfinnprioresults)
-    req(input$'group_Greenhouse crops')
+    #req(input$'group_Greenhouse crops')
     #req(input$impact_score)
     x1 <- input$'group_Greenhouse crops'
     x2 <- input$'group_Open-field crops'
     x3 <- input$'group_Trees and shrubs'
     x4 <- input$'group_Others'
     thr_sec <- c(x1, x2, x3, x4)
-# print( thr_sec )
-    if (is.null(input$quarantine_status) | is.null(input$taxonomic_group) | 
-        is.null(input$presence_in_europe) | is.null(thr_sec) == TRUE) {
-      validate(
-        need(input$quarantine_status, "Select a quarantine status"),
-        need(input$taxonomic_group, "Select a taxonomic group(s)"),
-        need(input$presence_in_europe, "Select presence in Europe"),
-        need(thr_sec, "Select a threatened sector(s)")
-      )
-      
-    } else  {
-      
-      cleanfinnprioresults |> 
-        filter(
-          quarantine_status  %in% input$quarantine_status,
-          taxonomic_group %in% input$taxonomic_group,
-          presence_in_europe %in% input$presence_in_europe,
-          entry_median >= input$entry_score[1] & entry_median <= input$entry_score[2],
-          establishment_and_spread_median >= input$establishment_score[1] & establishment_and_spread_median <= input$establishment_score[2],
-          invasion_median >= input$invasion_score[1] & invasion_median <= input$invasion_score[2],
-          impact_median >= input$impact_score[1] & impact_median <= input$impact_score[2]
-        )
-    }
+    
+    shiny::validate(
+      need(input$quarantine_status, "Select a quarantine status"),
+      need(input$taxonomic_group, "Select a taxonomic group(s)"),
+      need(input$presence_in_europe, "Select presence in Europe"),
+      need(length(thr_sec) > 0, "Select a threatened sector(s)")
+    )
+    
+    # Find which pests match at least one selected idThrSect
+    matching_pests <- cleanfinnprioresults |>
+      filter(idThrSect %in% thr_sec) |>
+      pull(pest) |>
+      unique()
+    
+    cleanfinnprioresults |>
+      filter(
+        quarantine_status %in% input$quarantine_status,
+        taxonomic_group %in% input$taxonomic_group,
+        presence_in_europe %in% input$presence_in_europe,
+        idThrSect %in% thr_sec,
+        entry_median >= input$entry_score[1] & entry_median <= input$entry_score[2],
+        establishment_and_spread_median >= input$establishment_score[1] & establishment_and_spread_median <= input$establishment_score[2],
+        invasion_median >= input$invasion_score[1] & invasion_median <= input$invasion_score[2],
+        impact_median >= input$impact_score[1] & impact_median <= input$impact_score[2]
+      ) |>
+      distinct(pest, .keep_all = TRUE)
   })
   
   output$threat_checkboxes <- renderUI({
@@ -70,13 +73,13 @@ function(input, output, session) {
   
   ## Selection of threatened sector: ---- 
   ## https://dplyr.tidyverse.org/reference/filter_all.html
-  # selected_status1 <- reactive({ 
-  #   # selected_status()
-  #   # filter_at(
-  #   #   selected_status(), vars(input$threatened_sek, input$threatened_sek2,input$threatened_sek3, input$threatened_sek4), 
-  #   #   any_vars(. == "Yes")) ### https://stackoverflow.com/questions/53197150/filter-multiple-columns-by-value-using-checkbox-group
-  #   
-  # })
+  #selected_status1 <- reactive({ 
+  #selected_status()
+  #filter_at(
+  #selected_status(), vars(input$'group_Greenhouse crops', input$'group_Open-field crops',input$'group_Trees and shrubs', input$'group_Others'), 
+  #any_vars(. == "Yes")) ### https://stackoverflow.com/questions/53197150/filter-multiple-columns-by-value-using-checkbox-group
+   #  
+  #})
   
   
   ## Subset data -> filter data for the table generated under the plot:----
@@ -141,6 +144,7 @@ function(input, output, session) {
                   extensions = "Buttons",
                   options = list(
                     ## Hide the first column that contains rownames and display columns based on the selections for x and y:
+                    order = list(list(1, 'asc')), #---NEW-- sorting in alphabetic order
                     columnDefs = list(list(targets = c(0), visible = FALSE), 
                                       if(input$xaxis == "invasion_median" | input$yaxis == "invasion_median") {
                                         list(targets = c(10,11,12), visible = TRUE)
@@ -297,7 +301,8 @@ function(input, output, session) {
         geom_text(aes(label = pest), 
                   size = 4, 
                   vjust = -0.05, 
-                  hjust = -0.08)} 
+                  hjust = -0.08,
+                  show.legend = FALSE)} ## remove the displayed superscript 'a' under the plot 
     
     
     ## Display error bars from 5th and 95th percentile when select checkbox for X: ----
@@ -318,8 +323,8 @@ function(input, output, session) {
                         width = 0.01)
         
         else if(input$whiskers_for_x && input$xaxis == "impact_median") 
-          geom_errorbar(aes(xmax = impact_5perc, 
-                            xmin = impact_95perc),  
+          geom_errorbar(aes(xmax = impact_95perc, 
+                            xmin = impact_5perc),  
                         width = 0.01)} 
     
     
@@ -380,8 +385,12 @@ function(input, output, session) {
     #Add new column to the datatable:
     # cleanfinnprioresults[,  ':='(eppo = eppoGD)]
     cleanfinnprioresults$eppo <- eppoGD
+    
+    # Keep only one row per pest
+    table_data <- cleanfinnprioresults %>%
+      distinct(pest, .keep_all = TRUE)
 
-    DT::datatable(select(cleanfinnprioresults, 
+    DT::datatable(select(table_data, # Exchanged "cleanfinnprioresults" with "table_data" due to the code added above to remove duplicates
                          pest, 
                          #eppo_code,
                          eppo,
@@ -424,6 +433,8 @@ function(input, output, session) {
       #columnDefs = list(),
       #fixedHeader = TRUE,
       
+      # sorting according to the risk values
+      order = list(list(10, 'desc')),
       ## Hide the first column that contains rownames
       columnDefs = list(list(targets = c(0), visible = FALSE)),
       
@@ -505,7 +516,11 @@ function(input, output, session) {
     # cleanfinnprioresults[,  ':='(eppo = eppoGD)]
     cleanfinnprioresults$eppo <- eppoGD
     
-    DT::datatable(select(cleanfinnprioresults, 
+    # Keep only one row per pest
+    table_data <- cleanfinnprioresults %>%
+      distinct(pest, .keep_all = TRUE)
+    
+    DT::datatable(select(table_data, #Exchanged "cleanfinnprioresults" with "table_data" due to the code added above to remove duplicates
                          pest, 
                          #eppo_code,
                          eppo,
@@ -547,6 +562,9 @@ function(input, output, session) {
       #pageLength = 15,
       #columnDefs = list(),
       #fixedHeader = TRUE,
+      
+      # sorting according to the risk values
+      order = list(list(10, 'desc')),
       
       ## Hide the first column that contains rownames
       columnDefs = list(list(targets = c(0), visible = FALSE)),
@@ -617,7 +635,8 @@ function(input, output, session) {
   # Generate risk rank plot ----
   plot_risk_output <- reactive({   
     data <- cleanfinnprioresults |> 
-      mutate(pest_label = paste0(pest, " [",eppo_code,"]"))
+      mutate(pest_label = paste0(pest, " [",eppo_code,"]"))|>
+      distinct(pest, .keep_all = TRUE) #keep one row per pest
     
     risk_order <- data |>
       arrange(risk_median) |>
@@ -635,7 +654,7 @@ function(input, output, session) {
       scale_y_discrete(limits = risk_order) +
       labs(
         caption = paste("    The dots indicate the simulated median risk score, and the whiskers show the 5th and the 95th percentiles of the distribution of the scores.
-                         \n    Number of pests: ", nrow(cleanfinnprioresults))#,
+                         \n    Number of pests: ", nrow(data))#, changed "cleanfinnprioresults" to "data" to avoid duplicates in captions
       ) +
       theme_bw() +
       #### Size of the plot scales:
@@ -654,8 +673,8 @@ function(input, output, session) {
             legend.position = "bottom") +
       guides(colour = guide_legend(nrow = 1)) + 
       labs(x = "Risk score") +
-      labs( y = "Pest") 
-      
+      labs( y = "Pest")
+    #
     ## Display error bars from 5th and 95th percentile when select checkbox for X: ----
     p <- p +
       geom_errorbar(aes(xmax = risk_95perc,
@@ -840,3 +859,4 @@ function(input, output, session) {
     
   })
 }
+
