@@ -1,4 +1,4 @@
-v <- numeric_version("1.0.0")
+v <- numeric_version("1.3.0")
 library(shiny)
 library(shinythemes)
 library(shinyhelper)
@@ -32,6 +32,7 @@ if(length(db_file) > 1){
 
 consql <- dbConnect(RSQLite::SQLite(), db_file[])
 threats <- dbReadTable(consql, "threatenedSectors")
+threatXassessment <- dbReadTable(consql, "threatXassessment") #Reading the link table between threats and assessment
 pests <- dbReadTable(consql, "pests")
 taxa <- dbReadTable(consql, "taxonomicGroups")
 quaran <- dbReadTable(consql, "quarantineStatus")
